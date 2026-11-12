@@ -39,6 +39,7 @@ import random   # useful for randomising things a little bit (e.g. ball's initia
 # ==============
 
 # Modify them here if you want to change the board size 
+
 WIDTH = 900     # pixels   
 HEIGHT = 600    # idem
 FPS = 60        # Frames per Second - No need to change - for changing paddles/ball speeds change the following ->
@@ -105,13 +106,17 @@ def get_config() -> tuple[int, int, int, int, int]:
       the chosen values, not modify constants.
     - Remember to maintain the same order of the returned elements.
     """
+    if not ask_yes_no("Do you want to change the game parameters?"):
+        return PADDLE_H, SPEED_PADDLE, SPEED_BALL_X, SPEED_BALL_Y, BALL_RADIUS
 
-    # TODO: put your code!!!!
+    paddle_h = read_int_in_range("Paddle height", 60, 160)
+    paddle_speed = read_int_in_range("Paddle speed", 3, 15)
+    ball_vx = read_int_in_range("Ball X speed", 2, 12)
+    ball_vy = read_int_in_range("Ball Y speed", 2, 12)
+    ball_radius = read_int_in_range("Ball radius", 4, 20)
 
-    # This line of code has been left for letting the full program work
-    # It corresponds to the user answering NO to changing any default values 
-    # You will need to eliminate it when adding your code
-    return PADDLE_H, SPEED_PADDLE, SPEED_BALL_X, SPEED_BALL_Y, BALL_RADIUS 
+    return paddle_h, paddle_speed, ball_vx, ball_vy, ball_radius
+
 
 def change_colors() -> tuple[tuple[int, int, int], tuple[int, int, int]]:
     """ Ask the user if they want to modify the game colors (background and foreground).
@@ -144,11 +149,12 @@ def change_colors() -> tuple[tuple[int, int, int], tuple[int, int, int]]:
     - Keep the order of returned values consistent: first background, then foreground.
     """
 
-    # TODO: put your code!!!!
+    if not ask_yes_no("Do you want to change the colors?"):
+        return BLACK, WHITE
 
-    # This line of code has been left for letting the full program work
-    # You will need to eliminate it when adding your code
-    return BLACK, WHITE
+    backg_col = read_color("background")
+    foreg_col = read_color("foreground")
+    return backg_col, foreg_col
 
 def read_color(prompt: str) -> tuple[int, int, int]:
     """Ask the user to enter the three RGB components of a color with each component in [0,255].
@@ -179,8 +185,11 @@ def read_color(prompt: str) -> tuple[int, int, int]:
     - Keep the order (Red, then Green, then Blue).
     """ 
 
-    # TODO: put your code!!!!
-    # return r, g, b
+    print(f"Enter the {prompt} color:")
+    r = read_int_in_range("  Red", 0, 255)
+    g = read_int_in_range("  Green", 0, 255)
+    b = read_int_in_range("  Blue", 0, 255)
+    return r, g, b
 
 def read_int_in_range(prompt: str, low: int, high: int) -> int:
     """Ask user for an integer within [low, high]. 
@@ -203,7 +212,16 @@ def read_int_in_range(prompt: str, low: int, high: int) -> int:
     An integer value such that low <= value <= high.
     """
     
-    # TODO: put your code!!!!
+    while True:
+        text = input(f"{prompt} [{low}-{high}]: ").strip()
+        try:
+            value = int(text)
+        except ValueError:
+            print("Please enter a whole number.")
+            continue
+        if low <= value <= high:
+            return value
+        print(f"The value must be between {low} and {high}.")
 
 def read_int_in_range_w_default(prompt: str, low: int, high: int, default_val: int) -> int:
     """ Advanced/alternate more user-friendly version of read_int_in_range().
@@ -239,7 +257,18 @@ def read_int_in_range_w_default(prompt: str, low: int, high: int, default_val: i
         The integer entered by the user, or `default_val` if the user pressed ENTER.
     """
     
-    # TODO: put your code!!!!
+    while True:
+        text = input(f"{prompt} [{low}-{high}] (ENTER = {default_val}): ").strip()
+        if text == "":
+            return default_val
+        try:
+            value = int(text)
+        except ValueError:
+            print("Please enter a whole number.")
+            continue
+        if low <= value <= high:
+            return value
+        print(f"The value must be between {low} and {high}.")
 
 
 def ask_yes_no(prompt: str) -> bool:
@@ -269,7 +298,13 @@ def ask_yes_no(prompt: str) -> bool:
     - Print a short message (e.g. "Please answer y/n.") when the answer is invalid.
     - Return only after receiving a valid input; do not stop the program with errors.
     """
-    # TODO: put your code!!!!
+    while True:
+        answer = input(f"{prompt} (y/n): ").strip().lower()
+        if answer == "y" or answer == "yes":
+            return True
+        if answer == "n" or answer == "no":
+            return False
+        print("Please answer y/n.")
 
 # ================================
 # Functions to complete: main game
@@ -337,11 +372,15 @@ def collide_ball_walls(x: int, y: int, vx: int, vy: int, radius: int, width: int
         When hitting a horizontal wall, change the sign of vy
         For precisely detecting collisions, you might need to consider the ball radius
     """
-    # TODO: put your code!!!!
+    if y - radius <= 0:            # top wall
+        y = radius
+        vy = -vy
+    elif y + radius >= height:     # bottom wall
+        y = height - radius
+        vy = -vy
 
-    # This line of code has been left for letting the full program work
-    # You will need to eliminate it when adding your code
     return x, y, vx, vy
+
 
 
 def collide_ball_paddle(x: int, y: int, vx: int, vy: int, paddle_x: int, paddle_y: int, paddle_w: int, paddle_h: int, radius: int) -> tuple[int, int, int, int, bool]:
@@ -393,11 +432,35 @@ def collide_ball_paddle(x: int, y: int, vx: int, vy: int, paddle_x: int, paddle_
     - The collision box ignores the ball's circular shape for simplicity,
       which is sufficient for this game.
     """
-    # TODO: put your code!!!!
     hit = False
 
-    # This line of code has been left for letting the full program work
-    # You will need to eliminate it when adding your code
+    # Ball's bounding box
+    ball_left = x - radius
+    ball_right = x + radius
+    ball_top = y - radius
+    ball_bottom = y + radius
+
+    # Paddle's box
+    pad_left = paddle_x
+    pad_right = paddle_x + paddle_w
+    pad_top = paddle_y
+    pad_bottom = paddle_y + paddle_h
+
+    # The two boxes overlap?
+    if ball_right >= pad_left and ball_left <= pad_right and ball_bottom >= pad_top and ball_top <= pad_bottom:
+        hit = True
+        # Push the ball just outside the paddle, on the side it came from
+        if vx < 0:      # moving left -> hit the left paddle -> put it on the paddle's right side
+            x = pad_right + radius
+        else:           # moving right -> hit the right paddle -> put it on the paddle's left side
+            x = pad_left - radius
+        vx = -vx
+
+        # OPTIONAL "effect": hitting far from the centre gives a steeper angle
+        paddle_center = paddle_y + paddle_h / 2
+        offset = (y - paddle_center) / (paddle_h / 2)   # between -1 (top) and +1 (bottom)
+        vy = vy + int(offset * 3)
+
     return x, y, vx, vy, hit
 
 def reset_ball(center_x: int, center_y: int, vx0: int, vy0: int, to_right: bool) -> tuple[int, int, int, int]:
@@ -434,11 +497,18 @@ def reset_ball(center_x: int, center_y: int, vx0: int, vy0: int, to_right: bool)
     - Optionally, randomize the vertical velocity slightly (e.g., sign or magnitude) for variability.
     """
 
-    # TODO: put your code!!!!
+    if to_right:
+        vx = vx0
+    else:
+        vx = -vx0
 
-    # This line of code has been left for letting the full program work
-    # You will need to eliminate/modify it when adding your code
-    return center_x, center_y, vx0, vy0
+    # Random vertical direction (up or down)
+    if random.random() < 0.5:
+        vy = vy0
+    else:
+        vy = -vy0
+
+    return center_x, center_y, vx, vy
 
 
 
@@ -471,10 +541,13 @@ def compute_ai_direction(ball_y: int, paddle_y: int, paddle_h: int) -> int:
     You might want to use a small tolerance margin so the paddle doesn't “vibrate” 
     when the ball is aligned enough.
     """
-    # TODO: put your code!!!!
+    paddle_center = paddle_y + paddle_h / 2
+    tolerance = 10   # pixels: stops the paddle from "vibrating"
 
-    # This line of code has been left for letting the full program work
-    # You will need to eliminate it when adding your code
+    if ball_y < paddle_center - tolerance:
+        return -1    # ball is above -> move up
+    elif ball_y > paddle_center + tolerance:
+        return 1     # ball is below -> move down
     return 0
 
 # =============================================
